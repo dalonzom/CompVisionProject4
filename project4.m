@@ -57,7 +57,7 @@ kmean = struct();
 % ctrs = kmean(clusters).ctrs; 
 % sumd = kmean(clusters).sumd; 
 
-clusters = 100;
+clusters = 1000;
 
 patches = zeros(size(features,2),size(features(1).pixels,1));
 
