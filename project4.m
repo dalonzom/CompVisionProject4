@@ -1,6 +1,6 @@
 
-% clear;
-% clc;
+clear;
+clc;
 %% Read in training images and use Harris corner detection 
 first = 1; 
 last = 550; 
@@ -35,8 +35,8 @@ end
 
 %% Use Kmeans to cluster the data 
 n = size(features,2);
-% kmean = struct();
-% 
+kmean = struct();
+
 % for i = 1:n/10 
 %     [cidx, ctrs, sumd] = kmeans([double(cell2mat(features))]', i, 'MaxIter',1000);
 %     kmean(i).cidx = cidx; 
@@ -52,28 +52,51 @@ n = size(features,2);
 %     kmean(i).bic =n*log(sum(sumd)/n)+(i*3)*log(n); 
 %     
 % end 
-clusters = 29; 
-cidx = kmean(clusters).cidx; 
-ctrs = kmean(clusters).ctrs; 
-sumd = kmean(clusters).sumd; 
+
+% cidx = kmean(clusters).cidx; 
+% ctrs = kmean(clusters).ctrs; 
+% sumd = kmean(clusters).sumd; 
+
+clusters = 100;
+
+patches = zeros(size(features,2),size(features(1).pixels,1));
+
+for i = 1:size(features,2)
+    patches(i,:) = features(i).pixels';
+end
+
+%%
+
+[idx, C] = kmeans(patches,clusters);
 
 
 %% Assign local patches to words in vocabulary, record possible displacement 
 %% vectors between word and object center 
-ssdDistances = struct(); 
-imageCenter = [20, 50]; 
-centerDistances = struct(); 
-for i = 1:n
-    clusterDistances = zeros(clusters, 1); 
-    for j = 1:clusters 
-        V = bsxfun(@minus, [double(features(i).pixels)], ctrs(j,:)');
-        clusterDistances(j) = sqrt(sum(V'.^2, 2)); 
-    end 
-    [~, ind] = min(clusterDistances); 
-    ssdDistances(i).coords =  ctrs(ind, :); 
-    ssdDistances(i).cluster = ind; 
-    
-    centerDistances(i).cluster = ind; 
-    centerDistances(i).distance = pdist([[features(i).location]; imageCenter]); 
-end 
+% ssdDistances = struct(); 
+%imageCenter = [20, 50]; 
+% centerDistances = struct(); 
+% for i = 1:n
+%     clusterDistances = zeros(clusters, 1); 
+%     for j = 1:clusters 
+%         V = bsxfun(@minus, [double(features(i).pixels)], ctrs(j,:)');
+%         clusterDistances(j) = sqrt(sum(V'.^2, 2)); 
+%     end 
+%     [~, ind] = min(clusterDistances); 
+%     ssdDistances(i).coords =  ctrs(ind, :); 
+%     ssdDistances(i).cluster = ind; 
+%     
+%     centerDistances(i).cluster = ind; 
+%     centerDistances(i).distance = pdist([[features(i).location]; imageCenter]); 
+% end 
 
+vocab = struct();
+for i=1:clusters
+    vocab(i).mean = reshape(C(i,:),size(vec));
+    vocab(i).displacments = [];
+end
+rowOffset = 20;
+colOffset = 50;
+for i=1:size(idx,1)
+    loc = features(i).location;
+    vocab(idx(i)).displacments = [vocab(idx(i)).displacments; loc(1)-rowOffset, loc(2)-colOffset];
+end
