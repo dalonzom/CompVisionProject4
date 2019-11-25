@@ -48,8 +48,8 @@ for i = 1:blocks
         vec = reshape(cells{i,j},1,[]); 
         [~, index] = sort(vec, 'descend'); 
         vec = zeros(sizeCell); 
-        vec(index(1:100)) = Imagcells{i,j}(index(1:100));
-         for k = 100:-1:1
+        vec(index(1:50)) = Imagcells{i,j}(index(1:50));
+         for k = 50:-1:1
             if min(abs(index(1:k-1) - index(k))) < 10 | index(k) < nonMaxThreshold 
                 vec(index(k)) = 0; 
             end 
