@@ -12,7 +12,7 @@ harris ={};
 for i = first:last
     count = count + 1;
     images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 100)}; 
+    harris{i} = {harrisDetector(images(:,:,:,count), 200)}; 
 end
 
 %% Extract 19x19 image patch for each feature 
@@ -42,13 +42,13 @@ kmean = struct();
 % ctrs = kmean(clusters).ctrs; 
 % sumd = kmean(clusters).sumd; 
 
-clusters = 29;
+clusters = 400;
 
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
 end
-[idx, C] = kmeans(patches,clusters);
+[idx, C] = kmeans(patches, clusters, 'MaxIter', 1000);
 
 
 %% Assign local patches to words in vocabulary, record possible displacement 
@@ -58,9 +58,9 @@ colOffset = 50;
 vocab = buildVocab(features, idx, clusters, C, rowOffset, colOffset); 
 
 %% Testing 
-count = 1; 
+count = 1
 image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-harris = {harrisDetector(image, 100)}; 
+harris = {harrisDetector(image, 200)}; 
 testFeatures = getPatches(harris, image, featureLength);
 [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
@@ -77,19 +77,25 @@ for i = 1:size(testFeatures,2)
         end
     end
 end
-votes = imfilter(votes,ones(5,5));
-
+filt = [1 2 1;2 4 2;1 2 1];
+votes = imfilter(votes,filt);
+%%
+imageDisp = votes./max(votes(:));
+figure(1)
+imshow(image)
+figure(2)
+imshow(imageDisp)
 
 %%
-% find the bin index for every data point
-binIndex = 1:clusters;
-equals = bsxfun(@eq,idx_test',binIndex);
-votes = sum(equals);
-
-% Thresholding 
-threshold = 4; 
-possibleClusters = find(votes >= threshold); 
-for i = 1:size(possibleClusters,2)
-    displacements = vocab(possibleClusters(i)).displacement; 
-end 
+% % find the bin index for every data point
+% binIndex = 1:clusters;
+% equals = bsxfun(@eq,idx_test',binIndex);
+% %votes = sum(equals);
+% 
+% % Thresholding 
+% threshold = 4; 
+% possibleClusters = find(votes >= threshold); 
+% for i = 1:size(possibleClusters,2)
+%     displacements = vocab(possibleClusters(i)).displacments; 
+% end 
 
