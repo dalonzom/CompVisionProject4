@@ -35,26 +35,30 @@ if size(image) == [40, 100]
   cells = mat2cell(Rs, [8 8 8 8 8], [20 20 20 20 20]);  
   sizeCell = [8, 20]; 
   blocks = 5; 
+  maxNum = 5; 
 else 
     Imagcells = mat2cell(Imag,size(Imag,1), size(Imag,2));
     cells = mat2cell(Rs,size(Imag,1), size(Imag,2));
     sizeCell = size(Imag); 
-    blocks = 1; 
+    blocks = 1;
+    maxNum=100; 
 end 
 
  
 for i = 1:blocks
     for j = 1:blocks 
-        vec = reshape(cells{i,j},1,[]); 
-        [~, index] = sort(vec, 'descend'); 
+        RsVec = reshape(cells{i,j},1,[]); 
+        [~, index] = sort(RsVec, 'descend'); 
+       
         vec = zeros(sizeCell); 
-        vec(index(1:50)) = Imagcells{i,j}(index(1:50));
-         for k = 50:-1:1
-            if min(abs(index(1:k-1) - index(k))) < 10 | index(k) < nonMaxThreshold 
+        vec(index(1:maxNum)) = Imagcells{i,j}(index(1:maxNum));
+
+         for k = maxNum:-1:1
+            if min(abs(index(1:k-1) - index(k))) < 10 | RsVec(index(k)) < nonMaxThreshold 
                 vec(index(k)) = 0; 
             end 
          end 
-        cells{i,j} = vec; 
+        cells{i,j} = reshape(vec,sizeCell); 
     end 
 end 
 Rs = cell2mat(cells); 

@@ -12,12 +12,13 @@ for i = 1:size(harris,2)
     for j = 1:size(rows,1)
         row = rows(j); 
         col = columns(j);
-        if row > length && col > length && row < size(mat,1)-length && col < size(mat,2)-length 
-            vec = image(row-length:row+length, col-length:col+length);
+        image = padarray(image,[length length],0,'both');
+        %if row > length && col > length && row < size(mat,1)-length && col < size(mat,2)-length 
+            vec = image(row:row+2*length, col:col+2*length);
             features(count).pixels = reshape(vec, size(vec,1)*size(vec,2),1); 
-            features(count).location = [row, col]; 
+            features(count).location = [row-length, col-length]; 
             count = count + 1; 
-        end
+       % end
     end 
     
 end

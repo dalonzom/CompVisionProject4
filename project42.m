@@ -4,45 +4,21 @@ clc;
 %% Read in training images and use Harris corner detection 
 first = 1; 
 last = 550;
-featureLength = 12; 
+featureLength = 9; 
 images = imread(strcat('CarTrainImages/train_car', sprintf('%03d',first),'.jpg'));
 count = 1;
 harris ={}; 
 for i = first:last
     count = count + 1;
     images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 200)}; 
+    harris{i} = {harrisDetector(images(:,:,:,count), 800)}; 
 end
 
 %% Extract 25x25 image patch for each feature 
 features = getPatches(harris, images, featureLength);  
 
 %% Use Kmeans to cluster the data 
-n = size(features,2);
-kmean = struct();
-
-% for i = 1:n/10 
-%     [cidx, ctrs, sumd] = kmeans([double(cell2mat(features))]', i, 'MaxIter',1000);
-%     kmean(i).cidx = cidx; 
-%     kmean(i).ctrs = ctrs; 
-%     kmean(i).sumd = sumd; 
-% %     prior = i -1; 
-% %     means = i*size(features,1); 
-% %     covar = i*size(features,1) *(size(features,1) +1)/2; 
-% %     pk = prior+means+covar;
-% %     pk = 2; 
-% %     kmean(i).bic = sum(sumd) - pk*log(i); 
-%     
-%     kmean(i).bic =n*log(sum(sumd)/n)+(i*3)*log(n); 
-%     
-% end 
-
-% cidx = kmean(clusters).cidx; 
-% ctrs = kmean(clusters).ctrs; 
-% sumd = kmean(clusters).sumd; 
-
-clusters = 400;
-
+clusters = 225;
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
@@ -61,7 +37,7 @@ load('GroundTruth/CarsGroundTruthBoundingBoxes.mat')
 results = struct();
 for count = 1:100
     image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-    harris = {harrisDetector(image, 200)}; 
+    harris = {harrisDetector(image, 400)}; 
     testFeatures = getPatches(harris, image, featureLength);
     [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
@@ -77,10 +53,13 @@ for count = 1:100
             end 
         end 
     end 
-    votes = imfilter(votes, ones(5,5)); 
+    filter = zeros(25,25); 
+    filter(13,13) = 1; 
+    filter = imgaussfilt(filter, 4); 
+    votes = imfilter(votes, filter, 'replicate', 'full'); 
     max(max(votes))
     sum(sum(votes))
-    threshold = max(max(votes)) - 2; 
+    threshold = max(max(votes)) - .001; 
     votesSorted = reshape(votes, size(votes,1)*size(votes,2),1); 
     votesSorted = sort(unique(votesSorted), 'descend'); 
     results(count).locations = []; 
@@ -95,10 +74,20 @@ for count = 1:100
     results(count).truth = groundtruth(count).topLeftLocs; 
     [~,closest] = pdist2(results(count).truth,[results(count).locations],'euclidean','Smallest',1);
     results(count).accuracy = []; 
+    results(count).correct = []; 
     for i = 1:size(closest,2)
-        results(count).accuracy = [results(count).accuracy;  ...
-            testBox(100, 40, results(count).truth(closest(i),1),results(count).truth(closest(i),2), ...
-            results(count).locations(i,1), results(count).locations(i,2))]; 
+        [correct, accuracy] = testBox(100, 40, results(count).truth(closest(i),1),results(count).truth(closest(i),2), ...
+            results(count).locations(i,1), results(count).locations(i,2)); 
+        results(count).accuracy = [results(count).accuracy; accuracy]; 
+        results(count).correct = [results(count).correct; correct]; 
     end 
 end 
+accuracy = []; 
+for i=1:size(results,2)
+    for j = 1:size(results(i).accuracy)
+        accuracy = [accuracy, results(i).accuracy(j)]; 
+    end
+end 
+mean(accuracy)
+max(accuracy)
 

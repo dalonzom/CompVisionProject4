@@ -1,4 +1,5 @@
-function [correct] = testBox(width, height, trueX, trueY, predictedX, predictedY)
+function [correct, IoU] = testBox(width, height, trueX, trueY, predictedX, predictedY)
 I = intersection(width, height, trueX, trueY, predictedX, predictedY);
-correct = (I/(2*width*height - I) > 0.5)
+IoU = I/(2*width*height - I); 
+correct = (IoU > 0.5); 
 end
