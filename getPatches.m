@@ -6,6 +6,7 @@ for i = 1:size(harris,2)
         mat = cell2mat(harris{i});
     else 
         mat = harris{i}; 
+    end 
     image = images(:,:,:,i); 
     [rows, columns, ~] = find(mat ~= 0); 
     for j = 1:size(rows,1)
