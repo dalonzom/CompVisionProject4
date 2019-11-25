@@ -42,7 +42,7 @@ kmean = struct();
 % ctrs = kmean(clusters).ctrs; 
 % sumd = kmean(clusters).sumd; 
 
-clusters = 100;
+clusters = 29;
 
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
@@ -64,7 +64,23 @@ harris = {harrisDetector(image, 100)};
 testFeatures = getPatches(harris, image, featureLength);
 [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
+votes = zeros(size(image));
 
+for i = 1:size(testFeatures,2)
+    location = testFeatures(i).location;
+    offsets = vocab(idx_test(i)).displacments;
+    for j = 1:size(offsets,1)
+        yLoc = location(1) - offsets(j,1);
+        xLoc = location(2) - offsets(j,2);
+        if xLoc >= 1 && xLoc <= size(image,2) && yLoc >= 1 && yLoc <= size(image,1)
+            votes(yLoc, xLoc) = votes(yLoc, xLoc) + 1;
+        end
+    end
+end
+votes = imfilter(votes,ones(5,5));
+
+
+%%
 % find the bin index for every data point
 binIndex = 1:clusters;
 equals = bsxfun(@eq,idx_test',binIndex);
