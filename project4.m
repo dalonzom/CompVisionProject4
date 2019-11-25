@@ -1,102 +1,63 @@
+% 
+% clear;
+% clc;
+% %% Training 
+% %% Read in training images and use Harris corner detection 
+% first = 1; 
+% last = 550; 
+% images = imread(strcat('CarTrainImages/train_car', sprintf('%03d',first),'.jpg'));
+% count = 1;
+% harris ={}; 
+% for i = first:last
+%     count = count + 1;
+%     images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
+%     harris{i} = {harrisDetector(images(:,:,:,count), 100)}; 
+% end
+% 
+% %% Extract 19x19 image patch for each feature 
+% features = getPatches(harris, images, 9);  
+% 
+% %% Use Kmeans to cluster the data 
+% n = size(features,2);
+% kmean = struct();
+% 
+% % for i = 1:n/10 
+% %     [cidx, ctrs, sumd] = kmeans([double(cell2mat(features))]', i, 'MaxIter',1000);
+% %     kmean(i).cidx = cidx; 
+% %     kmean(i).ctrs = ctrs; 
+% %     kmean(i).sumd = sumd; 
+% % %     prior = i -1; 
+% % %     means = i*size(features,1); 
+% % %     covar = i*size(features,1) *(size(features,1) +1)/2; 
+% % %     pk = prior+means+covar;
+% % %     pk = 2; 
+% % %     kmean(i).bic = sum(sumd) - pk*log(i); 
+% %     
+% %     kmean(i).bic =n*log(sum(sumd)/n)+(i*3)*log(n); 
+% %     
+% % end 
+% 
+% % cidx = kmean(clusters).cidx; 
+% % ctrs = kmean(clusters).ctrs; 
+% % sumd = kmean(clusters).sumd; 
+% 
+% clusters = 1000;
+% 
+% patches = zeros(size(features,2),size(features(1).pixels,1));
+% for i = 1:size(features,2)
+%     patches(i,:) = features(i).pixels';
+% end
+% [idx, C] = kmeans(patches,clusters);
+% 
+% 
+% %% Assign local patches to words in vocabulary, record possible displacement 
+% %% vectors between word and object center 
+% vocab = buildVocab(features, idx, clusters, C, 20, 50); 
 
-clear;
-clc;
-%% Read in training images and use Harris corner detection 
-first = 1; 
-last = 550; 
-images = imread(strcat('CarTrainImages/train_car', sprintf('%03d',first),'.jpg'));
-count = 1;
-harris ={}; 
-for i = first:last
-    count = count + 1;
-    images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 100)}; 
-end
-
-%% Extract 9x9 image patch for each feature 
-features = struct();
+%% Testing 
 count = 1; 
-for i = first:last
-    mat = cell2mat(harris{i});
-    image = images(:,:,:,i); 
-    [rows, columns, ~] = find(mat ~= 0); 
-    for j = 1:size(rows,1)
-        row = rows(j); 
-        col = columns(j);
-        if row > 4 && col > 4 && row < 36 && col < 96 
-            vec = image(row-4:row+4, col-4:col+4);
-            features(count).pixels = reshape(vec,81,1); 
-            features(count).location = [row, col]; 
-            count = count + 1; 
-        end
-    end 
-    
-end 
+image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
+harris = {harrisDetector(image, 100)}; 
+features = getPatches(harris, image, 9);
+[~,idx_test] = pdist2(C,[features.pixels]','euclidean','Smallest',1);
 
-%% Use Kmeans to cluster the data 
-n = size(features,2);
-kmean = struct();
-
-% for i = 1:n/10 
-%     [cidx, ctrs, sumd] = kmeans([double(cell2mat(features))]', i, 'MaxIter',1000);
-%     kmean(i).cidx = cidx; 
-%     kmean(i).ctrs = ctrs; 
-%     kmean(i).sumd = sumd; 
-% %     prior = i -1; 
-% %     means = i*size(features,1); 
-% %     covar = i*size(features,1) *(size(features,1) +1)/2; 
-% %     pk = prior+means+covar;
-% %     pk = 2; 
-% %     kmean(i).bic = sum(sumd) - pk*log(i); 
-%     
-%     kmean(i).bic =n*log(sum(sumd)/n)+(i*3)*log(n); 
-%     
-% end 
-
-% cidx = kmean(clusters).cidx; 
-% ctrs = kmean(clusters).ctrs; 
-% sumd = kmean(clusters).sumd; 
-
-clusters = 1000;
-
-patches = zeros(size(features,2),size(features(1).pixels,1));
-
-for i = 1:size(features,2)
-    patches(i,:) = features(i).pixels';
-end
-
-%%
-
-[idx, C] = kmeans(patches,clusters);
-
-
-%% Assign local patches to words in vocabulary, record possible displacement 
-%% vectors between word and object center 
-% ssdDistances = struct(); 
-%imageCenter = [20, 50]; 
-% centerDistances = struct(); 
-% for i = 1:n
-%     clusterDistances = zeros(clusters, 1); 
-%     for j = 1:clusters 
-%         V = bsxfun(@minus, [double(features(i).pixels)], ctrs(j,:)');
-%         clusterDistances(j) = sqrt(sum(V'.^2, 2)); 
-%     end 
-%     [~, ind] = min(clusterDistances); 
-%     ssdDistances(i).coords =  ctrs(ind, :); 
-%     ssdDistances(i).cluster = ind; 
-%     
-%     centerDistances(i).cluster = ind; 
-%     centerDistances(i).distance = pdist([[features(i).location]; imageCenter]); 
-% end 
-
-vocab = struct();
-for i=1:clusters
-    vocab(i).mean = reshape(C(i,:),size(vec));
-    vocab(i).displacments = [];
-end
-rowOffset = 20;
-colOffset = 50;
-for i=1:size(idx,1)
-    loc = features(i).location;
-    vocab(idx(i)).displacments = [vocab(idx(i)).displacments; loc(1)-rowOffset, loc(2)-colOffset];
-end

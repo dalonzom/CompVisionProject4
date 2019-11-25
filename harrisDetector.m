@@ -36,10 +36,10 @@ if size(image) == [40, 100]
   sizeCell = [8, 20]; 
   blocks = 5; 
 else 
-    Imagcells = mat2cell(Imag, [75 75 75 75 75], [90 90 90 90 90]);
-    cells = mat2cell(Rs,[75 75 75 75 75], [90 90 90 90 90]);
-    sizeCell = [75, 90]; 
-    blocks = 5; 
+    Imagcells = mat2cell(Imag,size(Imag,1), size(Imag,2));
+    cells = mat2cell(Rs,size(Imag,1), size(Imag,2));
+    sizeCell = size(Imag); 
+    blocks = 1; 
 end 
 
  
@@ -48,8 +48,8 @@ for i = 1:blocks
         vec = reshape(cells{i,j},1,[]); 
         [~, index] = sort(vec, 'descend'); 
         vec = zeros(sizeCell); 
-        vec(index(1:10)) = Imagcells{i,j}(index(1:10));
-         for k = 10:-1:1
+        vec(index(1:100)) = Imagcells{i,j}(index(1:100));
+         for k = 100:-1:1
             if min(abs(index(1:k-1) - index(k))) < 10 | index(k) < nonMaxThreshold 
                 vec(index(k)) = 0; 
             end 
