@@ -12,7 +12,7 @@ harris ={};
 for i = first:last
     count = count + 1;
     images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 200)}; 
+    harris{i} = {harrisDetector(images(:,:,:,count), 1e20)}; 
 end
 
 %% Extract 19x19 image patch for each feature 
@@ -42,7 +42,7 @@ kmean = struct();
 % ctrs = kmean(clusters).ctrs; 
 % sumd = kmean(clusters).sumd; 
 
-clusters = 400;
+clusters = 30;
 
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
@@ -58,10 +58,10 @@ colOffset = 50;
 vocab = buildVocab(features, idx, clusters, C, rowOffset, colOffset); 
 
 %% Testing 
-count = 1
+count = 7
 image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-harris = {harrisDetector(image, 200)}; 
-testFeatures = getPatches(harris, image, featureLength);
+harris = {harrisDetector(image, 1e11)}; 
+testFeatures = getPatches(harris,image, featureLength);
 [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
 votes = zeros(size(image));
@@ -77,8 +77,10 @@ for i = 1:size(testFeatures,2)
         end
     end
 end
-filt = [1 2 1;2 4 2;1 2 1];
-votes = imfilter(votes,filt);
+filter = zeros(25,25); 
+filter(13,13) = 1; 
+filter = imgaussfilt(filter, 4); 
+votes = imfilter(votes,filter);
 %%
 imageDisp = votes./max(votes(:));
 figure(1)
