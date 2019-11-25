@@ -93,5 +93,12 @@ for count = 1:100
         end 
     end  
     results(count).truth = groundtruth(count).topLeftLocs; 
+    [~,closest] = pdist2(results(count).truth,[results(count).locations],'euclidean','Smallest',1);
+    results(count).accuracy = []; 
+    for i = 1:size(closest,2)
+        results(count).accuracy = [results(count).accuracy;  ...
+            testBox(100, 40, results(count).truth(closest(i),1),results(count).truth(closest(i),2), ...
+            results(count).locations(i,1), results(count).locations(i,2))]; 
+    end 
 end 
 
