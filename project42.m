@@ -4,21 +4,21 @@ clc;
 %% Read in training images and use Harris corner detection 
 first = 1; 
 last = 550;
-featureLength = 9; 
+featureLength = 12; 
 images = imread(strcat('CarTrainImages/train_car', sprintf('%03d',first),'.jpg'));
 count = 1;
 harris ={}; 
 for i = first:last
     count = count + 1;
     images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 800)}; 
+    harris{i} = {harrisDetector(images(:,:,:,count), 200000)}; 
 end
 
 %% Extract 25x25 image patch for each feature 
 features = getPatches(harris, images, featureLength);  
 
 %% Use Kmeans to cluster the data 
-clusters = 225;
+clusters = 1;
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
@@ -37,7 +37,7 @@ load('GroundTruth/CarsGroundTruthBoundingBoxes.mat')
 results = struct();
 for count = 1:100
     image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-    harris = {harrisDetector(image, 400)}; 
+    harris = {harrisDetector(image, 200000)}; 
     testFeatures = getPatches(harris, image, featureLength);
     [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
