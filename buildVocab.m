@@ -7,7 +7,18 @@ end
 
 for i=1:size(idx,1)
     loc = features(i).location;
-    vocab(idx(i)).displacments = [vocab(idx(i)).displacments; loc(1)-rowOffset, loc(2)-colOffset];
+    if loc(1) <= rowOffset
+        loc(1) = loc(1) - rowOffset; 
+    else
+        loc(1) = loc(1)+rowOffset; 
+    end 
+    if loc(2) <= colOffset
+        loc(2) = loc(2) - colOffset; 
+    else
+        loc(2) = loc(2) + colOffset; 
+    end 
+        
+    vocab(idx(i)).displacments = [vocab(idx(i)).displacments; loc(1), loc(2)];
 end
 for i =1:size(vocab,2)
     if size(vocab(i).displacments,1) > 10
