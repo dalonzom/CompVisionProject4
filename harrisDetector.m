@@ -47,18 +47,16 @@ end
  
 for i = 1:blocks
     for j = 1:blocks 
-        RsVec = reshape(cells{i,j},1,[]); 
-        [~, index] = sort(RsVec, 'descend'); 
-       
+        vec = reshape(cells{i,j},1,[]); 
+        [~, index] = sort(vec, 'descend'); 
         vec = zeros(sizeCell); 
-        vec(index(1:maxNum)) = Imagcells{i,j}(index(1:maxNum));
-
-         for k = maxNum:-1:1
-            if min(abs(index(1:k-1) - index(k))) < 10 | RsVec(index(k)) < nonMaxThreshold 
+        vec(index(1:30)) = Imagcells{i,j}(index(1:30));
+         for k = 30:-1:1
+            if min(abs(index(1:k-1) - index(k))) < 10 | index(k) < nonMaxThreshold 
                 vec(index(k)) = 0; 
             end 
          end 
-        cells{i,j} = reshape(vec,sizeCell); 
+        cells{i,j} = vec; 
     end 
 end 
 Rs = cell2mat(cells); 

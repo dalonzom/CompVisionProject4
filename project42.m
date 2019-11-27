@@ -10,15 +10,15 @@ count = 1;
 harris ={}; 
 for i = first:last
     count = count + 1;
-    images(:,:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,:,count), 200000)}; 
+    images(:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
+    harris{i} = {harrisDetector(images(:,:,count), 100)}; 
 end
 
 %% Extract 25x25 image patch for each feature 
 features = getPatches(harris, images, featureLength);  
 
 %% Use Kmeans to cluster the data 
-clusters = 1;
+clusters = 200;
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
@@ -28,8 +28,8 @@ end
 
 %% Assign local patches to words in vocabulary, record possible displacement 
 %% vectors between word and object center 
-rowOffset = 20; 
-colOffset = 50; 
+rowOffset = 50; 
+colOffset = 20; 
 vocab = buildVocab(features, idx, clusters, C, rowOffset, colOffset); 
 
 %% Testing 
@@ -37,16 +37,16 @@ load('GroundTruth/CarsGroundTruthBoundingBoxes.mat')
 results = struct();
 for count = 1:100
     image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-    harris = {harrisDetector(image, 200000)}; 
+    harris = {harrisDetector(image, 100)}; 
     testFeatures = getPatches(harris, image, featureLength);
     [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
 
     % Thresholding 
     votes = zeros(size(image)); 
     for j = 1:size(testFeatures,2)
-        locations= bsxfun(@minus, testFeatures(j).location, vocab(idx_test(j)).displacments);
-        rows = locations(:,1); 
-        cols = locations(:,2); 
+        locations= bsxfun(@minus, testFeatures(j).location, vocab(idx_test(j)).voteLocations);
+        rows = round(locations(:,1)); 
+        cols = round(locations(:,2)); 
         for k = 1:size(rows,1)
             if rows(k) > 0 && cols(k) > 0 && rows(k) < size(image,1) && cols(k) < size(image,2)
                 votes(rows(k), cols(k)) = votes(rows(k), cols(k)) + 1; 
@@ -57,6 +57,7 @@ for count = 1:100
     filter(13,13) = 1; 
     filter = imgaussfilt(filter, 4); 
     votes = imfilter(votes, filter, 'replicate', 'full'); 
+    %votes = imfilter(votes, ones(5,5)); 
     max(max(votes))
     sum(sum(votes))
     threshold = max(max(votes)) - .001; 
