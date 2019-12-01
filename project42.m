@@ -11,19 +11,19 @@ harris ={};
 for i = first:last
     count = count + 1;
     images(:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,count), 3e10)};
+    harris{i} = {harrisDetector(images(:,:,count), 350)};
 end
 
 %% Extract 25x25 image patch for each feature
 features = getPatches(harris, images, featureLength);
 
 %% Use Kmeans to cluster the data
-clusters = 100;
+clusters = 29;
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
 end
-[idx, C] = kmeans(patches,clusters);
+[idx, C] = kmeans(patches,clusters, 'MaxIter', 1000);
 
 
 %% Assign local patches to words in vocabulary, record possible displacement
@@ -37,7 +37,7 @@ load('GroundTruth/CarsGroundTruthBoundingBoxes.mat')
 results = struct();
 for count = 1:100
     image = imread(strcat('CarTestImages/test_car', sprintf('%03d',count),'.jpg'));
-    harris = {harrisDetector(image,  3e11)};
+    harris = {harrisDetector(image,  1e10)};
     testFeatures = getPatches(harris, image, featureLength);
     [~,idx_test] = pdist2(C,[testFeatures.pixels]','euclidean','Smallest',1);
     
@@ -63,7 +63,7 @@ for count = 1:100
 %     filter(13,13) = 1;
 %     filter = imgaussfilt(filter, 4);
 %     votes = imfilter(votes, filter, 'replicate', 'full');
-    filter = [1 2 1; 1 10 1; 1 2 1];
+    filter = [1 1 1; 2 5 2; 5 10 5; 2 5 2; 1 1 1]; 
     votes = imfilter(votes, filter);
     max(max(votes))
     sum(sum(votes))
@@ -84,8 +84,8 @@ for count = 1:100
     results(count).accuracy = [];
     results(count).correct = [];
     for i = 1:size(closest,2)
-        [correct, accuracy] = testBox(100, 40, results(count).truth(closest(i),1),results(count).truth(closest(i),2), ...
-            results(count).locations(i,1), results(count).locations(i,2));
+        [correct, accuracy] = testBox(100, 40, results(count).truth(closest(i),2),results(count).truth(closest(i),1), ...
+            results(count).locations(i,2), results(count).locations(i,1));
         results(count).accuracy = [results(count).accuracy; accuracy];
         results(count).correct = [results(count).correct; correct];
     end
