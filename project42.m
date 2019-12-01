@@ -4,21 +4,21 @@ clc;
 %% Read in training images and use Harris corner detection
 first = 1;
 last = 550;
-featureLength = 9;
+featureLength = 12;
 images = imread(strcat('CarTrainImages/train_car', sprintf('%03d',first),'.jpg'));
 count = 1;
 harris ={};
 for i = first:last
     count = count + 1;
     images(:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,count), 3.75e11)};
+    harris{i} = {harrisDetector(images(:,:,count), 3e10)};
 end
 
 %% Extract 25x25 image patch for each feature
 features = getPatches(harris, images, featureLength);
 
 %% Use Kmeans to cluster the data
-clusters = 29;
+clusters = 100;
 patches = zeros(size(features,2),size(features(1).pixels,1));
 for i = 1:size(features,2)
     patches(i,:) = features(i).pixels';
@@ -58,24 +58,27 @@ for count = 1:100
             end
         end
     end
-    
-    filter = zeros(25,25);
-    filter(13,13) = 1;
-    filter = imgaussfilt(filter, 4);
-    votes = imfilter(votes, filter, 'replicate', 'full');
-    %votes = imfilter(votes, ones(5,5));
+%     
+%     filter = zeros(25,25);
+%     filter(13,13) = 1;
+%     filter = imgaussfilt(filter, 4);
+%     votes = imfilter(votes, filter, 'replicate', 'full');
+    filter = [1 2 1; 1 10 1; 1 2 1];
+    votes = imfilter(votes, filter);
     max(max(votes))
     sum(sum(votes))
-    threshold = max(max(votes)) - 1e-12;
+    threshold = max(max(votes));
     votesSorted = reshape(votes, size(votes,1)*size(votes,2),1);
     votesSorted = sort(unique(votesSorted), 'descend');
     results(count).locations = [];
-    for x = 1:2
-        if votesSorted(x) > threshold
-            [row, col] = find(votes == votesSorted(x));
-            results(count).locations = [results(count).locations; [col-colOffset, row-rowOffset]];
-        end
-    end
+    [row, col] = find(votes == max(max(votes)));
+    results(count).locations = [[col(1)-colOffset,row(1)-rowOffset]];
+    for i = 2:size(row,1)
+        if max(pdist2([row, col], [row(i), col(i)],'euclidean','Smallest',2)) > 20
+            results(count).locations = [results(count).locations; col(i)-colOffset, row(i)-rowOffset]; 
+        end 
+    end 
+     
     results(count).truth = groundtruth(count).topLeftLocs;
     [~,closest] = pdist2(results(count).truth,[results(count).locations],'euclidean','Smallest',1);
     results(count).accuracy = [];
@@ -88,11 +91,14 @@ for count = 1:100
     end
 end
 accuracy = [];
+correct = []; 
 for i=1:size(results,2)
     for j = 1:size(results(i).accuracy)
         accuracy = [accuracy, results(i).accuracy(j)];
+        correct = [correct, results(i).correct(j)];
     end
 end
 mean(accuracy)
 max(accuracy)
+sum(correct) 
 
