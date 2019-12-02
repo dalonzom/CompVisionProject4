@@ -11,10 +11,10 @@ harris ={};
 for i = first:last
     count = count + 1;
     images(:,:,count) = imread(strcat('CarTrainImages/train_car', sprintf('%03d',i),'.jpg'));
-    harris{i} = {harrisDetector(images(:,:,count), 2e11)};
+    harris{i} = {harrisDetector(images(:,:,count), 1e11)};
 end
 
-%% Extract 25x25 image patch for each feature
+%% Extract 15x15 image patch for each feature
 features = getPatches(harris, images, featureLength);
 
 %% Use Kmeans to cluster the data
@@ -64,10 +64,11 @@ for count = 1:100
         end
     end
     
-    filter = zeros(7,7);
-    filter(3:5,3:5) = 1;
-    filter = imgaussfilt(filter, 2);
+%     filter = zeros(7,7);
+%     filter(3:5,3:5) = 1;
+%     filter = imgaussfilt(filter, 2);
     %filter = ones(7);
+    filter = [1 1 1 1 1 ; 1 2 5 2 1 ;2 5 10 5 2; 1 2 5 2 1 ; 1 1 1 1 1]; 
     votes = imfilter(votes, filter, 'replicate', 'full');
     %votes = imfilter(votes, ones(5,5));
     max(max(votes));
